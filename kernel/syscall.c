@@ -44,6 +44,9 @@ static uint64 argraw(int n) {
   return -1;
 }
 
+
+// argin argaddr 一个是 int 类型地址，一个是 uint64 类型地址
+
 // Fetch the nth 32-bit system call argument.
 int argint(int n, int *ip) {
   *ip = argraw(n);
@@ -57,8 +60,6 @@ int argaddr(int n, uint64 *ip) {
   *ip = argraw(n);
   return 0;
 }
-
-// argin argaddr 一个是 int 类型地址，一个是 uint64 类型地址
 
 // Fetch the nth word-sized system call argument as a null-terminated string.
 // Copies into buf, at most max.
