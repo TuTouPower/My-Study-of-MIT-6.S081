@@ -6,6 +6,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "sysinfo.h"
 
 uint64 sys_exit(void) {
   int n;
@@ -80,5 +81,26 @@ uint64 sys_trace(void) {
     mask = mask >> 1;
   }
   myproc()->trace_syscall_max = trace_syscall_max;
+  return 0;
+}
+
+uint64 sys_sysinfo(void) {
+  uint64 sysinfo_addr;
+  if (argaddr(0, &sysinfo_addr) < 0) return -1;
+  struct proc *p = myproc();
+
+  uint64 freemem;
+  freemem = getfreeMemorySize();
+  uint64 nproc;
+  nproc = getProcessUnusedCount();
+  if (copyout(p->pagetable, sysinfo_addr, (char *)&freemem, sizeof(freemem)) <
+      0) {
+    return -1;
+  }
+  if (copyout(p->pagetable, sysinfo_addr + sizeof(freemem), (char *)&nproc,
+              sizeof(nproc)) < 0) {
+    return -1;
+  };
+
   return 0;
 }

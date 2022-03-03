@@ -18,7 +18,6 @@ struct spinlock pid_lock;
 extern void forkret(void);
 static void wakeup1(struct proc *chan);
 static void freeproc(struct proc *p);
-
 extern char trampoline[];  // trampoline.S
 
 // initialize the proc table at boot time.
@@ -628,4 +627,13 @@ void procdump(void) {
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+uint64 getProcessUnusedCount(){
+  struct proc * p;
+  uint64 ProcessUnusedCount = 0;
+  for (p = proc; p < &proc[NPROC]; p++) {
+    if (p->state != UNUSED) ProcessUnusedCount++;  
+  }
+  return ProcessUnusedCount;
 }
