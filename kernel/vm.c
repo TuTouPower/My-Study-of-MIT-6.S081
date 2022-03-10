@@ -269,6 +269,7 @@ uvmdealloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz)
   return newsz;
 }
 
+// recursively: 递归地; leaf: 叶。
 // Recursively free page-table pages.
 // All leaf mappings must already have been removed.
 void
@@ -439,4 +440,34 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
   } else {
     return -1;
   }
+}
+
+void vmprintHelper(pagetable_t pagetable, int depth) {
+  for (int i = 0; i < 512; i++) {
+    pte_t pte = pagetable[i];
+    if (pte & PTE_V) {
+      for ( int depth_i = 0; depth_i < depth; depth_i++) {
+        printf(".. ");
+      }
+
+      uint64 child = PTE2PA(pte);
+      printf("%d: pte %p pa %p\n", i, pte, child);
+
+      if(depth == 3)  continue;
+      else{
+        // 此处奇奇怪怪，没太搞懂
+
+        // vmprintHelper((pagetable_t)child, depth+1);
+        // vmprintHelper((pagetable_t)child, depth++);
+        depth++;
+        vmprintHelper((pagetable_t)child, depth);
+        depth--;
+      }
+    }
+  }
+}
+
+void vmprint(pagetable_t pagetable) {
+  printf("page table %p\n", pagetable);
+  vmprintHelper(pagetable, 1);
 }

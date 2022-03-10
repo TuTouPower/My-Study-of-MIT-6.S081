@@ -326,7 +326,7 @@ sfence_vma()
 #define PGROUNDUP(sz)  (((sz)+PGSIZE-1) & ~(PGSIZE-1))
 #define PGROUNDDOWN(a) (((a)) & ~(PGSIZE-1))
 
-#define PTE_V (1L << 0) // valid
+#define PTE_V (1L << 0) // valid 在这里是左移 0 位，换个环境就不一定是0了，这样写是为了代码通用
 #define PTE_R (1L << 1)
 #define PTE_W (1L << 2)
 #define PTE_X (1L << 3)
@@ -335,6 +335,11 @@ sfence_vma()
 // shift a physical address to the right place for a PTE.
 #define PA2PTE(pa) ((((uint64)pa) >> 12) << 10)
 
+// xv6 系统物理地址为 56 位 
+// 一个 Page Table 包含 512 行，每行一个 Page Table Entry ( PTE )
+// 每个 PTE 64 位，包含 10 个空位留待以后使用，
+// 44 个指向下一个页表的物理地址，10个标志位，包括 V R W X
+// 计算下一个页表的地址时，先将 pte 右移 10 位去除标志位，再左移 12 位获得完整的 56 位物理地址
 #define PTE2PA(pte) (((pte) >> 10) << 12)
 
 #define PTE_FLAGS(pte) ((pte) & 0x3FF)
