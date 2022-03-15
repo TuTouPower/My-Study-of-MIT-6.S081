@@ -44,9 +44,10 @@ procinit(void)
   kvminithart();
 }
 
-// Must be called with interrupts disabled,
+// Must be called with interrupts disabled, 这句话啥意思 不懂
 // to prevent race with process being moved
 // to a different CPU.
+// 防止进程移动到其他CPU时发生争用
 int
 cpuid()
 {
@@ -115,11 +116,29 @@ found:
 
   // An empty user page table.
   p->pagetable = proc_pagetable(p);
+
   if(p->pagetable == 0){
     freeproc(p);
     release(&p->lock);
     return 0;
   }
+
+  p->k_pagetable = kvmcreate();
+  
+  /*################################################
+  // 确保每一个进程的内核页表都关于该进程的内核栈有一个映射。
+  // 在未修改的XV6中，所有的内核栈都在`procinit`中设置。
+  // 你将要把这个功能部分或全部的迁移到`allocproc`中
+  // Allocate a page for the process's kernel stack.
+  // Map it high in memory, followed by an invalid
+  // guard page.
+  char *pa = kalloc();
+  if(pa == 0)
+    panic("kalloc");
+  uint64 va = KSTACK((int) (p - proc));
+  kvmmap(va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
+  p->kstack = va;
+  */
 
   // Set up new context to start executing at forkret,
   // which returns to user space.
@@ -141,6 +160,10 @@ freeproc(struct proc *p)
   p->trapframe = 0;
   if(p->pagetable)
     proc_freepagetable(p->pagetable, p->sz);
+  if(p->k_pagetable)
+    freewalkWithoutPhysicalMemory(p->k_pagetable);
+  // 不懂
+  // p->k_pagetable = 0;
   p->pagetable = 0;
   p->sz = 0;
   p->pid = 0;
@@ -473,11 +496,19 @@ scheduler(void)
         // before jumping back to us.
         p->state = RUNNING;
         c->proc = p;
+        
+        w_satp(MAKE_SATP(p->k_pagetable));
+        sfence_vma();
+
         swtch(&c->context, &p->context);
 
         // Process is done running for now.
         // It should have changed its p->state before coming back.
         c->proc = 0;
+
+        // 没有进程运行时`scheduler()`应当使用`kernel_pagetable`
+        // 为啥填了这个语句就可以了 不懂
+        kvminithart();
 
         found = 1;
       }
